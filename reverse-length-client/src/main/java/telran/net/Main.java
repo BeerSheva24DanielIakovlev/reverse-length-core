@@ -3,14 +3,14 @@ package telran.net;
 import telran.view.*;
 
 public class Main {
-    static ReverseClient reverseClient;
+    private static ReverseClient reverseClient;
 
     public static void main(String[] args) {
         Item[] items = {
-                Item.of("Start session", Main::startSession),
+                Item.of("Start Session", Main::startSession),
                 Item.ofExit()
         };
-        Menu menu = new Menu("Reverse Application", items);
+        Menu menu = new Menu("Reverse-Length Application", items);
         menu.perform(new StandardInputOutput());
     }
 
@@ -21,20 +21,26 @@ public class Main {
         if (reverseClient != null) {
             reverseClient.close();
         }
-        
         reverseClient = new ReverseClient(host, port);
+
+        Menu sessionMenu = new Menu("Run Session",
+                Item.of("Reverse String", Main::reverseString),
+                Item.of("String Length", Main::stringLength),
+                Item.ofExit());
         
-        Menu menu = new Menu("Run Session",
-                Item.of("Enter string to reverse", Main::reverseString),
-                Item.ofExit()
-        );
-        menu.perform(io);
+        sessionMenu.perform(io);
     }
 
     static void reverseString(InputOutput io) {
-        String input = io.readString("Enter any string to reverse:");
-        String response = reverseClient.sendReverseRequest(input);
-        io.writeLine("Reversed string: " + response);
+        String str = io.readString("Enter any string:");
+        String response = reverseClient.sendAndReceive("reverse " + str);
+        io.writeLine("Response from server: " + response);
+    }
+
+    static void stringLength(InputOutput io) {
+        String str = io.readString("Enter any string:");
+        String response = reverseClient.sendAndReceive("length " + str);
+        io.writeLine("Response from server: " + response);
     }
 }
 

@@ -1,51 +1,47 @@
 package telran.net;
 
-import java.net.*;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
+import java.net.ServerSocket;
+import java.net.Socket;
 
 public class Main {
     private static final int PORT = 6000;
 
+    @SuppressWarnings("resource")
     public static void main(String[] args) throws Exception {
-        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
-            System.out.println("Server started on port " + PORT);
-            while (true) {
-                Socket socket = serverSocket.accept();
-                new Thread(() -> runSession(socket)).start(); 
-            }
+        ServerSocket serverSocket = new ServerSocket(PORT);
+        System.out.println("Server is listening on port " + PORT);
+        
+        while (true) {
+            Socket socket = serverSocket.accept();
+            System.out.println("Client connected: " + socket.getInetAddress().getHostAddress());
+            runSession(socket);
         }
     }
 
     private static void runSession(Socket socket) {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-             PrintStream writer = new PrintStream(socket.getOutputStream())) {
-
+        try (
+            BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            PrintStream writer = new PrintStream(socket.getOutputStream());
+        ) {
             String request;
             while ((request = reader.readLine()) != null) {
-                String[] parts = request.split(":", 2);
-                if (parts.length != 2) {
-                    writer.println("Invalid request format. Expected format: <type>:<string>");
-                    continue;
+                String[] parts = request.split(" ", 2);
+                String type = parts[0].toLowerCase();
+                String content = parts.length > 1 ? parts[1] : "";
+                
+                if ("reverse".equals(type)) {
+                    writer.println(new StringBuilder(content).reverse().toString());
+                } else if ("length".equals(type)) {
+                    writer.println(content.length());
+                } else {
+                    writer.println("Unknown request type: " + type);
                 }
-                String requestType = parts[0].trim();
-                String requestString = parts[1].trim();
-
-                String response = handleRequest(requestType, requestString);
-                writer.println(response);
             }
         } catch (Exception e) {
-            System.out.println("Client disconnected or error occurred: " + e.getMessage());
-        }
-    }
-
-    private static String handleRequest(String requestType, String requestString) {
-        switch (requestType.toLowerCase()) {
-            case "reverse":
-                return new StringBuilder(requestString).reverse().toString();
-            case "length":
-                return String.valueOf(requestString.length());
-            default:
-                return "Unknown request type: " + requestType;
+            System.out.println("Client disconnected unexpectedly");
         }
     }
 }

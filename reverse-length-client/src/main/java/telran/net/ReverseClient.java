@@ -1,7 +1,9 @@
 package telran.net;
 
-import java.net.*;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
+import java.net.Socket;
 
 public class ReverseClient {
     private Socket socket;
@@ -14,16 +16,16 @@ public class ReverseClient {
             writer = new PrintStream(socket.getOutputStream());
             reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Unable to connect to server", e);
         }
     }
 
-    public String sendReverseRequest(String input) {
+    public String sendAndReceive(String request) {
         try {
-            writer.println("reverse:" + input);
+            writer.println(request);
             return reader.readLine();
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Error during communication with server", e);
         }
     }
 
@@ -31,7 +33,7 @@ public class ReverseClient {
         try {
             socket.close();
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Error closing client connection", e);
         }
     }
 }
